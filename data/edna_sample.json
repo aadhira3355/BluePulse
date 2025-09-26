@@ -1,0 +1,20 @@
+[
+  {
+    "species": "Sardinella longiceps",
+    "confidence": 95,
+    "abundance": 1240,
+    "status": "LC"
+  },
+  {
+    "species": "Pristis zijsron",
+    "confidence": 82,
+    "abundance": 3,
+    "status": "CR"
+  },
+  {
+    "species": "Epinephelus malabaricus",
+    "confidence": 88,
+    "abundance": 45,
+    "status": "EN"
+  }
+]

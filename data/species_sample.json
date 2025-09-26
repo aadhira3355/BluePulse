@@ -1,0 +1,20 @@
+[
+  {
+    "name": "Indian Oil Sardine",
+    "scientific": "Sardinella longiceps",
+    "status": "LC",
+    "confidence": 96
+  },
+  {
+    "name": "Malabar Grouper",
+    "scientific": "Epinephelus malabaricus",
+    "status": "EN",
+    "confidence": 87
+  },
+  {
+    "name": "Green Sawfish",
+    "scientific": "Pristis zijsron",
+    "status": "CR",
+    "confidence": 78
+  }
+]
