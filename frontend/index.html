@@ -1,1 +1,748 @@
-<!DOCTYPE html><html><head><meta charset='utf-8'><title>BluePulse Final</title><meta name='viewport' content='width=device-width, initial-scale=1'><link rel='stylesheet' href='style.css'><script src='https://cdn.jsdelivr.net/npm/chart.js'></script></head><body><nav><button class='tab active' data-sec='dashboard'>Dashboard</button><button class='tab' data-sec='species'>Species Map</button><button class='tab' data-sec='ocean'>Oceanographic</button><button class='tab' data-sec='edna'>eDNA</button><button class='tab' data-sec='ml'>ML Train</button><button class='tab' data-sec='otolith'>Otolith</button><button class='tab' data-sec='chat'>AI Chat</button></nav><main><section id='dashboard' class='sec active'><h2>BluePulse Dashboard</h2></section><section id='species' class='sec'><h2>Species Map</h2><div id='map'><div id='markers'></div></div></section><section id='ocean' class='sec'><h2>Oceanographic Forecast</h2><canvas id='tempChart'></canvas><canvas id='salChart'></canvas></section><section id='edna' class='sec'><h2>eDNA Analysis</h2><button id='loadEdna'>Load Sample Data</button><table id='ednaTable'><thead><tr><th>Species</th><th>Conf%</th><th>Abund</th><th>Status</th></tr></thead><tbody></tbody></table><canvas id='ednaPie'></canvas></section><section id='ml' class='sec'><h2>ML Training (demo)</h2><button id='trainBtn'>Simulate Train</button><pre id='trainLog'></pre></section><section id='otolith' class='sec'><h2>Otolith Viewer</h2><input type='file' id='otoFile'><button id='otoClassify'>Classify</button><div id='otoResult'></div></section><section id='chat' class='sec'><h2>Marine AI Chat</h2><div id='chatBox'></div><input id='chatInp'><button id='chatSend'>Send</button></section></main><script src='app.js'></script></body></html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BluePulse ML - Complete Marine Data Platform</title>
+    <link rel="stylesheet" href="styles/main.css">
+    <link rel="stylesheet" href="styles/components.css">
+    <link rel="stylesheet" href="styles/charts.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js"></script>
+    <script src="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js"></script>
+    <link href="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+</head>
+<body>
+    <div id="app">
+        <!-- Navigation Header -->
+        <nav class="main-nav">
+            <div class="nav-container">
+                <div class="nav-brand">
+                    <div class="logo">🌊</div>
+                    <h1>BluePulse ML</h1>
+                    <span class="version">v2.0</span>
+                </div>
+                <div class="nav-menu">
+                    <button class="nav-btn active" data-section="dashboard">
+                        <i class="fas fa-tachometer-alt"></i>
+                        <span>Dashboard</span>
+                    </button>
+                    <button class="nav-btn" data-section="species-map">
+                        <i class="fas fa-map-marked-alt"></i>
+                        <span>Species Map</span>
+                    </button>
+                    <button class="nav-btn" data-section="oceanographic">
+                        <i class="fas fa-chart-line"></i>
+                        <span>Oceanographic</span>
+                    </button>
+                    <button class="nav-btn" data-section="edna-analysis">
+                        <i class="fas fa-dna"></i>
+                        <span>eDNA Analysis</span>
+                    </button>
+                    <button class="nav-btn" data-section="otolith-classifier">
+                        <i class="fas fa-eye"></i>
+                        <span>Otolith AI</span>
+                    </button>
+                    <button class="nav-btn" data-section="ml-training">
+                        <i class="fas fa-brain"></i>
+                        <span>ML Training</span>
+                    </button>
+                    <button class="nav-btn" data-section="ai-assistant">
+                        <i class="fas fa-robot"></i>
+                        <span>AI Assistant</span>
+                    </button>
+                </div>
+                <div class="nav-actions">
+                    <button class="nav-action-btn" id="notifications-btn">
+                        <i class="fas fa-bell"></i>
+                        <span class="notification-badge">3</span>
+                    </button>
+                    <button class="nav-action-btn" id="settings-btn">
+                        <i class="fas fa-cog"></i>
+                    </button>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <!-- Dashboard Section -->
+            <section id="dashboard" class="content-section active">
+                <div class="section-header">
+                    <h1>Marine Intelligence Dashboard</h1>
+                    <p class="section-description">Real-time marine data analytics powered by advanced AI models</p>
+                </div>
+
+                <!-- KPI Cards -->
+                <div class="kpi-grid">
+                    <div class="kpi-card">
+                        <div class="kpi-icon species">🐟</div>
+                        <div class="kpi-content">
+                            <div class="kpi-value" id="total-species">5,247</div>
+                            <div class="kpi-label">Species Catalogued</div>
+                            <div class="kpi-trend positive">+12% this month</div>
+                        </div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-icon models">🧠</div>
+                        <div class="kpi-content">
+                            <div class="kpi-value" id="ai-models">8</div>
+                            <div class="kpi-label">AI Models Active</div>
+                            <div class="kpi-trend positive">94.2% avg accuracy</div>
+                        </div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-icon stations">📡</div>
+                        <div class="kpi-content">
+                            <div class="kpi-value" id="monitoring-stations">15</div>
+                            <div class="kpi-label">Monitoring Stations</div>
+                            <div class="kpi-trend neutral">Real-time active</div>
+                        </div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-icon predictions">🎯</div>
+                        <div class="kpi-content">
+                            <div class="kpi-value" id="predictions-today">1,847</div>
+                            <div class="kpi-label">AI Predictions Today</div>
+                            <div class="kpi-trend positive">+5% accuracy</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Actions -->
+                <div class="quick-actions">
+                    <div class="action-card" data-section="otolith-classifier">
+                        <div class="action-icon">🔍</div>
+                        <h3>Classify Species</h3>
+                        <p>Upload otolith images for AI-powered species identification</p>
+                        <button class="action-btn">Start Classification</button>
+                    </div>
+                    <div class="action-card" data-section="edna-analysis">
+                        <div class="action-icon">🧬</div>
+                        <h3>eDNA Analysis</h3>
+                        <p>Genetic sequencing and biodiversity assessment</p>
+                        <button class="action-btn">Analyze Sequences</button>
+                    </div>
+                    <div class="action-card" data-section="ml-training">
+                        <div class="action-icon">⚡</div>
+                        <h3>Train Models</h3>
+                        <p>Deploy and train custom AI models for marine data</p>
+                        <button class="action-btn">Train Now</button>
+                    </div>
+                </div>
+
+                <!-- System Status -->
+                <div class="system-status">
+                    <h2>System Status</h2>
+                    <div class="status-grid">
+                        <div class="status-item">
+                            <div class="status-indicator online"></div>
+                            <div class="status-info">
+                                <div class="status-name">API Gateway</div>
+                                <div class="status-value">Online</div>
+                            </div>
+                        </div>
+                        <div class="status-item">
+                            <div class="status-indicator online"></div>
+                            <div class="status-info">
+                                <div class="status-name">ML Inference</div>
+                                <div class="status-value">Processing</div>
+                            </div>
+                        </div>
+                        <div class="status-item">
+                            <div class="status-indicator warning"></div>
+                            <div class="status-info">
+                                <div class="status-name">Data Pipeline</div>
+                                <div class="status-value">High Load</div>
+                            </div>
+                        </div>
+                        <div class="status-item">
+                            <div class="status-indicator online"></div>
+                            <div class="status-info">
+                                <div class="status-name">Database</div>
+                                <div class="status-value">Healthy</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Species Map Section -->
+            <section id="species-map" class="content-section">
+                <div class="section-header">
+                    <h1>AI-Powered Species Distribution Map</h1>
+                    <p class="section-description">Interactive mapping with ML-predicted species distributions</p>
+                </div>
+
+                <div class="map-controls">
+                    <div class="control-group">
+                        <label>Species Filter:</label>
+                        <select id="species-filter">
+                            <option value="all">All Species</option>
+                            <option value="endangered">Endangered Only</option>
+                            <option value="fish">Fish Species</option>
+                            <option value="crustaceans">Crustaceans</option>
+                            <option value="mollusks">Mollusks</option>
+                        </select>
+                    </div>
+                    <div class="control-group">
+                        <label>Confidence Level:</label>
+                        <select id="confidence-filter">
+                            <option value="all">All Predictions</option>
+                            <option value="high">High (>90%)</option>
+                            <option value="medium">Medium (70-90%)</option>
+                            <option value="low">Low (<70%)</option>
+                        </select>
+                    </div>
+                    <div class="control-group">
+                        <button id="toggle-heatmap" class="control-btn">
+                            <i class="fas fa-fire"></i> Toggle Heatmap
+                        </button>
+                        <button id="refresh-map" class="control-btn">
+                            <i class="fas fa-sync-alt"></i> Refresh
+                        </button>
+                    </div>
+                </div>
+
+                <div class="map-container">
+                    <div id="main-map"></div>
+                    <div class="map-legend">
+                        <div class="legend-item">
+                            <div class="legend-color high"></div>
+                            <span>High Confidence (>90%)</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color medium"></div>
+                            <span>Medium Confidence (70-90%)</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color low"></div>
+                            <span>Low Confidence (<70%)</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="species-info-panel">
+                    <div class="info-section">
+                        <h3>Recent Detections</h3>
+                        <div id="recent-detections"></div>
+                    </div>
+                    <div class="info-section">
+                        <h3>Biodiversity Hotspots</h3>
+                        <canvas id="biodiversity-chart"></canvas>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Oceanographic Section -->
+            <section id="oceanographic" class="content-section">
+                <div class="section-header">
+                    <h1>Environmental Monitoring & Prediction</h1>
+                    <p class="section-description">LSTM-powered oceanographic forecasting and real-time monitoring</p>
+                </div>
+
+                <div class="ocean-controls">
+                    <div class="control-group">
+                        <label>Parameter:</label>
+                        <select id="parameter-select">
+                            <option value="temperature">Temperature</option>
+                            <option value="salinity">Salinity</option>
+                            <option value="chlorophyll">Chlorophyll-a</option>
+                            <option value="ph">pH Level</option>
+                            <option value="oxygen">Dissolved Oxygen</option>
+                        </select>
+                    </div>
+                    <div class="control-group">
+                        <label>Station:</label>
+                        <select id="station-select">
+                            <option value="all">All Stations</option>
+                            <option value="kochi">Kochi Station</option>
+                            <option value="trivandrum">Trivandrum Station</option>
+                            <option value="calicut">Calicut Station</option>
+                        </select>
+                    </div>
+                    <div class="control-group">
+                        <label>Forecast:</label>
+                        <select id="forecast-range">
+                            <option value="24h">24 Hours</option>
+                            <option value="7d">7 Days</option>
+                            <option value="30d">30 Days</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="charts-container">
+                    <div class="chart-panel">
+                        <div class="chart-header">
+                            <h3>Environmental Forecast</h3>
+                            <div class="accuracy-badge">91% Accuracy</div>
+                        </div>
+                        <canvas id="forecast-chart"></canvas>
+                    </div>
+                    <div class="chart-panel">
+                        <div class="chart-header">
+                            <h3>Historical Trends</h3>
+                            <div class="accuracy-badge">95% Data Quality</div>
+                        </div>
+                        <canvas id="historical-chart"></canvas>
+                    </div>
+                </div>
+
+                <div class="parameter-cards">
+                    <div class="param-card">
+                        <div class="param-header">
+                            <i class="fas fa-thermometer-half"></i>
+                            <span>Temperature</span>
+                        </div>
+                        <div class="param-value">28.4°C</div>
+                        <div class="param-trend positive">+0.2°C (24h)</div>
+                        <canvas class="param-mini-chart" id="temp-mini"></canvas>
+                    </div>
+                    <div class="param-card">
+                        <div class="param-header">
+                            <i class="fas fa-tint"></i>
+                            <span>Salinity</span>
+                        </div>
+                        <div class="param-value">34.2 ppt</div>
+                        <div class="param-trend stable">Stable</div>
+                        <canvas class="param-mini-chart" id="sal-mini"></canvas>
+                    </div>
+                    <div class="param-card">
+                        <div class="param-header">
+                            <i class="fas fa-leaf"></i>
+                            <span>Chlorophyll-a</span>
+                        </div>
+                        <div class="param-value">2.1 mg/m³</div>
+                        <div class="param-trend negative">-0.3 mg/m³</div>
+                        <canvas class="param-mini-chart" id="chl-mini"></canvas>
+                    </div>
+                </div>
+            </section>
+
+            <!-- eDNA Analysis Section -->
+            <section id="edna-analysis" class="content-section">
+                <div class="section-header">
+                    <h1>Environmental DNA Analysis</h1>
+                    <p class="section-description">Advanced genetic sequencing for biodiversity assessment</p>
+                </div>
+
+                <div class="edna-upload">
+                    <div class="upload-area">
+                        <div class="upload-icon">🧬</div>
+                        <h3>Upload Sequence Files</h3>
+                        <p>Support for FASTA, FASTQ, and other sequence formats</p>
+                        <input type="file" id="edna-files" multiple accept=".fasta,.fastq,.fa,.fq">
+                        <button class="upload-btn">Choose Files</button>
+                    </div>
+                    <div class="analysis-options">
+                        <div class="option-group">
+                            <label>Target Gene:</label>
+                            <select id="gene-target">
+                                <option value="18s">18S rRNA</option>
+                                <option value="coi">COI Barcoding</option>
+                                <option value="16s">16S rRNA</option>
+                            </select>
+                        </div>
+                        <div class="option-group">
+                            <label>Analysis Type:</label>
+                            <select id="analysis-type">
+                                <option value="taxonomy">Taxonomic Classification</option>
+                                <option value="diversity">Biodiversity Assessment</option>
+                                <option value="phylogeny">Phylogenetic Analysis</option>
+                            </select>
+                        </div>
+                        <button id="start-analysis" class="analyze-btn">
+                            <i class="fas fa-microscope"></i> Start Analysis
+                        </button>
+                    </div>
+                </div>
+
+                <div class="edna-results">
+                    <div class="results-summary">
+                        <div class="summary-card">
+                            <div class="summary-number">287</div>
+                            <div class="summary-label">Families Detected</div>
+                        </div>
+                        <div class="summary-card">
+                            <div class="summary-number">152</div>
+                            <div class="summary-label">Fish Species</div>
+                        </div>
+                        <div class="summary-card">
+                            <div class="summary-number">96%</div>
+                            <div class="summary-label">Classification Accuracy</div>
+                        </div>
+                    </div>
+
+                    <div class="results-table">
+                        <table id="species-table">
+                            <thead>
+                                <tr>
+                                    <th>Species</th>
+                                    <th>Scientific Name</th>
+                                    <th>Confidence</th>
+                                    <th>Abundance</th>
+                                    <th>Conservation Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="species-tbody"></tbody>
+                        </table>
+                    </div>
+
+                    <div class="results-charts">
+                        <div class="chart-container">
+                            <h3>Taxonomic Distribution</h3>
+                            <canvas id="taxonomy-chart"></canvas>
+                        </div>
+                        <div class="chart-container">
+                            <h3>Biodiversity Index</h3>
+                            <canvas id="biodiversity-index-chart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Otolith Classifier Section -->
+            <section id="otolith-classifier" class="content-section">
+                <div class="section-header">
+                    <h1>Otolith AI Classifier</h1>
+                    <p class="section-description">ResNet-powered species identification from otolith morphometry</p>
+                </div>
+
+                <div class="classifier-interface">
+                    <div class="upload-panel">
+                        <div class="image-upload">
+                            <div id="image-preview">
+                                <div class="preview-placeholder">
+                                    <i class="fas fa-image fa-3x"></i>
+                                    <p>Upload otolith image for classification</p>
+                                </div>
+                                <img id="uploaded-image" style="display: none;">
+                            </div>
+                            <input type="file" id="otolith-file" accept="image/*">
+                            <div class="upload-actions">
+                                <button id="upload-btn" class="action-btn">
+                                    <i class="fas fa-upload"></i> Upload Image
+                                </button>
+                                <button id="sample-btn" class="action-btn secondary">
+                                    <i class="fas fa-image"></i> Use Sample
+                                </button>
+                            </div>
+                        </div>
+                        <button id="classify-btn" class="classify-btn">
+                            <i class="fas fa-brain"></i> Classify Specimen
+                        </button>
+                    </div>
+
+                    <div class="results-panel">
+                        <div id="classification-results" style="display: none;">
+                            <div class="result-header">
+                                <h3>Classification Results</h3>
+                                <div class="model-info">ResNet-50 | 94% Accuracy</div>
+                            </div>
+                            <div class="species-result">
+                                <div class="species-name" id="predicted-species">Rastrelliger kanagurta</div>
+                                <div class="common-name" id="common-name">Indian Mackerel</div>
+                                <div class="confidence-score" id="confidence">96.7%</div>
+                            </div>
+                            <div class="morphometric-data">
+                                <h4>Morphometric Analysis</h4>
+                                <div class="measurement-grid">
+                                    <div class="measurement">
+                                        <span class="label">Length:</span>
+                                        <span class="value" id="length">15.2 ± 0.1 mm</span>
+                                    </div>
+                                    <div class="measurement">
+                                        <span class="label">Width:</span>
+                                        <span class="value" id="width">12.8 ± 0.1 mm</span>
+                                    </div>
+                                    <div class="measurement">
+                                        <span class="label">Circularity:</span>
+                                        <span class="value" id="circularity">0.847</span>
+                                    </div>
+                                    <div class="measurement">
+                                        <span class="label">Age Estimate:</span>
+                                        <span class="value" id="age">3 ± 0.5 years</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="processing-info">
+                                <h4>Processing Details</h4>
+                                <ul>
+                                    <li>Image preprocessing: Completed</li>
+                                    <li>Feature extraction: 2048 features</li>
+                                    <li>Model inference: 247ms</li>
+                                    <li>Confidence threshold: 85%</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ML Training Section -->
+            <section id="ml-training" class="content-section">
+                <div class="section-header">
+                    <h1>Machine Learning Training Pipeline</h1>
+                    <p class="section-description">Train, evaluate, and deploy custom AI models</p>
+                </div>
+
+                <div class="training-interface">
+                    <div class="model-selection">
+                        <div class="model-grid">
+                            <div class="model-card active" data-model="otolith">
+                                <div class="model-icon">🐟</div>
+                                <h3>Otolith Classifier</h3>
+                                <p>ResNet-50 for species identification</p>
+                                <div class="model-status">Ready</div>
+                            </div>
+                            <div class="model-card" data-model="lstm">
+                                <div class="model-icon">📊</div>
+                                <h3>LSTM Predictor</h3>
+                                <p>Environmental parameter forecasting</p>
+                                <div class="model-status">Training</div>
+                            </div>
+                            <div class="model-card" data-model="edna">
+                                <div class="model-icon">🧬</div>
+                                <h3>eDNA Classifier</h3>
+                                <p>Random Forest genetic classification</p>
+                                <div class="model-status">Deployed</div>
+                            </div>
+                            <div class="model-card" data-model="nlp">
+                                <div class="model-icon">💬</div>
+                                <h3>Marine NLP</h3>
+                                <p>DistilBERT fine-tuned chatbot</p>
+                                <div class="model-status">Fine-tuning</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="training-controls">
+                        <div class="control-section">
+                            <h3>Training Configuration</h3>
+                            <div class="config-grid">
+                                <div class="config-item">
+                                    <label>Batch Size:</label>
+                                    <select id="batch-size">
+                                        <option value="16">16</option>
+                                        <option value="32" selected>32</option>
+                                        <option value="64">64</option>
+                                    </select>
+                                </div>
+                                <div class="config-item">
+                                    <label>Learning Rate:</label>
+                                    <input type="number" id="learning-rate" value="0.001" step="0.0001">
+                                </div>
+                                <div class="config-item">
+                                    <label>Epochs:</label>
+                                    <input type="number" id="epochs" value="100" min="1" max="1000">
+                                </div>
+                                <div class="config-item">
+                                    <label>GPU:</label>
+                                    <select id="gpu-select">
+                                        <option value="cuda:0">GPU 0 (Available)</option>
+                                        <option value="cpu">CPU Only</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="action-buttons">
+                            <button id="start-training" class="train-btn">
+                                <i class="fas fa-play"></i> Start Training
+                            </button>
+                            <button id="pause-training" class="pause-btn" disabled>
+                                <i class="fas fa-pause"></i> Pause
+                            </button>
+                            <button id="stop-training" class="stop-btn" disabled>
+                                <i class="fas fa-stop"></i> Stop
+                            </button>
+                            <button id="evaluate-model" class="eval-btn">
+                                <i class="fas fa-chart-bar"></i> Evaluate
+                            </button>
+                            <button id="deploy-model" class="deploy-btn">
+                                <i class="fas fa-rocket"></i> Deploy
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="training-dashboard">
+                        <div class="metrics-panel">
+                            <div class="metric-chart">
+                                <h4>Training Loss</h4>
+                                <canvas id="loss-chart"></canvas>
+                            </div>
+                            <div class="metric-chart">
+                                <h4>Validation Accuracy</h4>
+                                <canvas id="accuracy-chart"></canvas>
+                            </div>
+                            <div class="metric-stats">
+                                <h4>Current Metrics</h4>
+                                <div class="stat-grid">
+                                    <div class="stat-item">
+                                        <span class="stat-label">Epoch:</span>
+                                        <span class="stat-value" id="current-epoch">0</span>
+                                    </div>
+                                    <div class="stat-item">
+                                        <span class="stat-label">Loss:</span>
+                                        <span class="stat-value" id="current-loss">--</span>
+                                    </div>
+                                    <div class="stat-item">
+                                        <span class="stat-label">Accuracy:</span>
+                                        <span class="stat-value" id="current-accuracy">--</span>
+                                    </div>
+                                    <div class="stat-item">
+                                        <span class="stat-label">Time:</span>
+                                        <span class="stat-value" id="training-time">--</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="logs-panel">
+                            <h4>Training Logs</h4>
+                            <div id="training-logs"></div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- AI Assistant Section -->
+            <section id="ai-assistant" class="content-section">
+                <div class="section-header">
+                    <h1>Marine AI Assistant</h1>
+                    <p class="section-description">DistilBERT-powered chatbot trained on marine domain knowledge</p>
+                </div>
+
+                <div class="chat-interface">
+                    <div class="chat-container">
+                        <div id="chat-messages">
+                            <div class="message ai-message">
+                                <div class="message-avatar">🤖</div>
+                                <div class="message-content">
+                                    <div class="message-text">
+                                        Hello! I'm your marine AI assistant, trained on 10,000+ research papers and marine databases. 
+                                        I can help you with species identification, environmental analysis, conservation status, 
+                                        and marine biodiversity questions. How can I assist you today?
+                                    </div>
+                                    <div class="message-time">Just now</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="chat-input-area">
+                            <div class="input-container">
+                                <input type="text" id="chat-input" placeholder="Ask about marine species, conservation, or environmental patterns...">
+                                <button id="send-message" class="send-btn">
+                                    <i class="fas fa-paper-plane"></i>
+                                </button>
+                            </div>
+                            <div class="chat-suggestions">
+                                <button class="suggestion-btn" data-query="endangered species Kerala">
+                                    🚨 Endangered species in Kerala waters
+                                </button>
+                                <button class="suggestion-btn" data-query="temperature impact fish">
+                                    🌡️ How does temperature affect fish populations?
+                                </button>
+                                <button class="suggestion-btn" data-query="biodiversity hotspots">
+                                    🌿 Marine biodiversity hotspots
+                                </button>
+                                <button class="suggestion-btn" data-query="eDNA accuracy methods">
+                                    🧬 eDNA detection accuracy and methods
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="chat-sidebar">
+                        <div class="model-info">
+                            <h4>Model Information</h4>
+                            <div class="info-grid">
+                                <div class="info-item">
+                                    <span class="info-label">Model:</span>
+                                    <span class="info-value">DistilBERT</span>
+                                </div>
+                                <div class="info-item">
+                                    <span class="info-label">Training Data:</span>
+                                    <span class="info-value">10k+ Papers</span>
+                                </div>
+                                <div class="info-item">
+                                    <span class="info-label">F1 Score:</span>
+                                    <span class="info-value">0.89</span>
+                                </div>
+                                <div class="info-item">
+                                    <span class="info-label">Languages:</span>
+                                    <span class="info-value">EN, HI, ML, TA</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="knowledge-base">
+                            <h4>Knowledge Sources</h4>
+                            <ul class="source-list">
+                                <li>CMLRE Marine Database</li>
+                                <li>INCOIS Oceanographic Data</li>
+                                <li>NCBI Genetic Sequences</li>
+                                <li>IUCN Red List Status</li>
+                                <li>FishBase Taxonomy</li>
+                                <li>Marine Research Papers</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- Notification Panel -->
+        <div id="notification-panel" class="notification-panel">
+            <div class="notification-header">
+                <h3>Recent Notifications</h3>
+                <button id="close-notifications">&times;</button>
+            </div>
+            <div class="notification-list">
+                <div class="notification-item">
+                    <div class="notification-icon warning">⚠️</div>
+                    <div class="notification-content">
+                        <div class="notification-title">Temperature Anomaly Detected</div>
+                        <div class="notification-desc">Kochi station shows unusual temperature spike</div>
+                        <div class="notification-time">2 hours ago</div>
+                    </div>
+                </div>
+                <div class="notification-item">
+                    <div class="notification-icon success">✅</div>
+                    <div class="notification-content">
+                        <div class="notification-title">Model Training Completed</div>
+                        <div class="notification-desc">LSTM predictor achieved 91% accuracy</div>
+                        <div class="notification-time">4 hours ago</div>
+                    </div>
+                </div>
+                <div class="notification-item">
+                    <div class="notification-icon info">ℹ️</div>
+                    <div class="notification-content">
+                        <div class="notification-title">New Species Detected</div>
+                        <div class="notification-desc">eDNA analysis found rare species near Trivandrum</div>
+                        <div class="notification-time">6 hours ago</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Loading Overlay -->
+        <div id="loading-overlay" class="loading-overlay" style="display: none;">
+            <div class="loading-spinner">
+                <div class="spinner"></div>
+                <div class="loading-text">Processing...</div>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/app.js"></script>
+    <script src="js/dashboard.js"></script>
+    <script src="js/species-map.js"></script>
+    <script src="js/oceanographic.js"></script>
+    <script src="js/edna-analysis.js"></script>
+    <script src="js/otolith-classifier.js"></script>
+    <script src="js/ml-training.js"></script>
+    <script src="js/ai-assistant.js"></script>
+</body>
+</html>
